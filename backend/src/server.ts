@@ -65,8 +65,9 @@ app.patch('/api/microservices/:id', authenticate, async (req, res) => {
   const result = updateMicroServiceSchema.safeParse(req.body);
   if (!result.success || (!result.data.status && !result.data.severity)) return res.status(400).json({ message: 'Invalid Microservice update' });
   try {
-    const current = await pool.query<Microservice>('SELECT id, name, endpointUrl, severity, status, created_at, created_by FROM microservices WHERE id = $1', [req.params.id]);
-    if (!current.rows[0]) return res.status(404).json({ message: 'Incident not found' });
+
+    const current = await pool.query<Microservice>('SELECT id, name, endpointUrl, status, environment, created_at, created_by FROM microservices WHERE id = $1', [req.params.id]);
+    if (!current.rows[0]) return res.status(404).json({ message: 'Microservice not found' });
     const incident = current.rows[0];
     const updated = await pool.query<Microservice>(
       `UPDATE microservices SET severity = $1, status = $2 WHERE id = $3
@@ -74,7 +75,7 @@ app.patch('/api/microservices/:id', authenticate, async (req, res) => {
       [result.data.severity ?? incident.severity, result.data.status ?? incident.status, req.params.id],
     );
     return res.json({ incident: toMicroService(updated.rows[0]) });
-  } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to update incident' }); }
+  } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to update MicroService' }); }
 });
 
 app.delete('/api/microservices/:id', authenticate, async (req, res) => {
@@ -82,14 +83,14 @@ app.delete('/api/microservices/:id', authenticate, async (req, res) => {
     const deleted = await pool.query('DELETE FROM microservices WHERE id = $1', [req.params.id]);
     if (deleted.rowCount === 0) return res.status(404).json({ message: 'Incident not found' });
     return res.status(204).send();
-  } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to delete incident' }); }
+  } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to delete Microservice' }); }
 });
 
 app.get('/api/health', async (_req, res) => {
-  try { await pool.query('SELECT 1'); return res.json({ message: 'PulseDesk backend is running', database: 'connected' }); }
+  try { await pool.query('SELECT 1'); return res.json({ message: 'MicroService backend is running', database: 'connected' }); }
   catch { return res.status(500).json({ message: 'Database connection failed' }); }
 });
 
 initializeDatabase()
-  .then(() => app.listen(PORT, () => console.log(`PulseDesk backend running on http://localhost:${PORT}`)))
+  .then(() => app.listen(PORT, () => console.log(`MicroService backend running on http://localhost:${PORT}`)))
   .catch((error) => { console.error('Unable to initialize PostgreSQL:', error); process.exit(1); });
