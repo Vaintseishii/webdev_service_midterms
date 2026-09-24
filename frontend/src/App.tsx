@@ -3,11 +3,6 @@ import { useMicroservices } from './context/IncidentContext'
 import type { Microservice, ServiceStatus, Environment, } from './types'
 import './App.css'
 
-/*
-AAAAAAAAAAAAAAAAAAAAAAAAA
-const severities: Severity[] = ['Low', 'Medium', 'High', 'Critical']
-const statuses: IncidentStatus[] = ['Open', 'In Progress', 'Resolved']
-*/
 
 const environments: Environment[] = ['DEVELOPMENT' , 'STAGING' , 'PRODUCTION']
 const statuses: ServiceStatus[] = ['HEALTHY' , 'DEGRADED' , 'DOWN'
@@ -21,11 +16,7 @@ function Login() {
 
     return <main className="login-shell">
         <section className="login-card">
-            <div className="brand-mark">P</div>
-            <p className="eyebrow">IT OPERATIONS</p>
-            <h1>Welcome to servicehub</h1><p className="muted">
-                Keep every incident moving toward resolution.
-            </p>
+            <h1>Welcome to servicehub</h1>
             <form onSubmit={submit}>
                 <label>
                     Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
@@ -39,7 +30,7 @@ function Login() {
                 </button>
             </form>
             <p className="demo-hint">
-                Demo access is prefilled.
+                Palmes & Azarraga
             </p>
         </section>
     </main>
@@ -131,11 +122,8 @@ function Dashboard() {
   return <main className="app-shell">
     <header className="topbar">
         <div className="wordmark">
-            <span className="brand-mark small">
-                P
-            </span>
             <span>
-                servicehub
+                ServiceHub
             </span>
         </div>
         <div className="user-menu">
@@ -150,15 +138,10 @@ function Dashboard() {
                     <div className="content">
                         <div className="page-heading">
                             <div>
-                                <p className="eyebrow">
-                                    OPERATIONS CENTER
-                                </p>
                                 <h1>
                                     microservice overview
                                 </h1>
-                                <p className="muted">
-                                    Track, prioritize, and resolve your team&apos;s technical issues.
-                                </p>
+
                             </div>
                             <button className="primary-button" onClick={() => setShowForm(!showForm)}>
                                 ＋ New microservice
@@ -177,7 +160,7 @@ function Dashboard() {
                         </div>
                         <div>
                             <span>
-                                    Open
+                                    Development
                             </span>
                             <strong>
                                     {counts.open}
@@ -185,7 +168,7 @@ function Dashboard() {
                         </div>
                         <div>
                             <span>
-                                In progress
+                                Staging
                              </span>
                              <strong>
                                 {counts.progress}
@@ -193,7 +176,7 @@ function Dashboard() {
                         </div>
                         <div>
                             <span>
-                                Resolved
+                                Production
                             </span>
                             <strong>
                                 {counts.resolved}
@@ -241,9 +224,6 @@ function Dashboard() {
                                         <section className="incident-section">
                                             <div className="toolbar">
                                                 <div>
-                                                    <p className="eyebrow">
-                                                        ALL ACTIVITY
-                                                    </p>
                                                     <h2>
                                                         Microservice
                                                     </h2>

@@ -58,48 +58,6 @@ export async function initializeDatabase() {
   `);
 
 
-/*
-export interface IncidentRow {
-  id: string;
-  title: string;
-  description: string;
-  severity: 'Low' | 'Medium' | 'High' | 'Critical';
-  status: 'Open' | 'In Progress' | 'Resolved';
-  created_at: Date;
-  created_by: string;
-}
-
-export const toIncident = (row: IncidentRow) => ({
-  id: row.id,
-  title: row.title,
-  description: row.description,
-  severity: row.severity,
-  status: row.status,
-  createdAt: row.created_at.toISOString(),
-  createdBy: row.created_by,
-});
-
-
-export async function initializeDatabase() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS microservices (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      severity TEXT NOT NULL CHECK (severity IN ('Low', 'Medium', 'High', 'Critical')),
-      status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'In Progress', 'Resolved')),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      created_by TEXT NOT NULL REFERENCES users(email)
-    );
-  `);
-  */
-
 
 
   const user = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@servicehub.com']);

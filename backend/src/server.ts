@@ -13,9 +13,6 @@ const loginSchema = z.object({ email: z.email(), password: z.string().min(6) });
 const createMicroServiceSchema = z.object({ name: z.string().min(3), endpointUrl: z.string().min(5), status: z.enum(['HEALTH', 'DEGRADED', 'DOWN']) });
 const updateMicroServiceSchema = z.object({ status: z.enum(['HEALTH', 'DEGRADED', 'DOWN']).optional(), environment: z.enum(['DEVELOPENT', 'STAGING', 'PRODUCTION']).optional() });
 
-// severity is status
-// status is environment
-
 declare global { namespace Express { interface Request { userEmail?: string } } }
 app.use(cors());
 app.use(express.json());
