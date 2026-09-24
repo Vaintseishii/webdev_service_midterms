@@ -39,37 +39,37 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Database error during login' }); }
 });
 
-app.get('/api/incidents', authenticate, async (_req, res) => {
+app.get('/api/microservices', authenticate, async (_req, res) => {
   try {
-    const result = await pool.query<Microservice>('SELECT id, title, description, severity, status, created_at, created_by FROM incidents ORDER BY created_at DESC');
-    return res.json({ incidents: result.rows.map(toMicroService) });
-  } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to load incidents' }); }
+    const result = await pool.query<Microservice>('SELECT id, name, endpointUrl, environment, status, created_at, created_by FROM microservices ORDER BY created_at DESC');
+    return res.json({ microservices: result.rows.map(toMicroService) });
+  } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to load microservices' }); }
 });
 
-app.post('/api/incidents', authenticate, async (req, res) => {
-  const result = createIncidentSchema.safeParse(req.body);
-  if (!result.success) return res.status(400).json({ message: 'Title, description, and severity are required' });
+app.post('/api/microservices', authenticate, async (req, res) => {
+  const result = createMicroServiceSchema.safeParse(req.body);
+  if (!result.success) return res.status(400).json({ message: 'Name, endpointUrl, and status are required' });
   try {
     const id = `INC-${Date.now()}`;
     const inserted = await pool.query<Microservice>(
-      `INSERT INTO incidents (id, title, description, severity, status, created_by)
+      `INSERT INTO microservices (id, name, endpointUrl, environment, status, created_by)
        VALUES ($1, $2, $3, $4, 'Open', $5)
-       RETURNING id, title, description, severity, status, created_at, created_by`,
-      [id, result.data.title, result.data.description, result.data.severity, req.userEmail],
+       RETURNING id, name, endpointUrl, environment, status, created_at, created_by`,
+      [id, result.data.name, result.data.endpointUrl, result.data.status, req.userEmail],
     );
     return res.status(201).json({ incident: toMicroService(inserted.rows[0]) });
-  } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to create incident' }); }
+  } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to create MicroService' }); }
 });
 
-app.patch('/api/incidents/:id', authenticate, async (req, res) => {
-  const result = updateIncidentSchema.safeParse(req.body);
-  if (!result.success || (!result.data.status && !result.data.severity)) return res.status(400).json({ message: 'Invalid incident update' });
+app.patch('/api/microservices/:id', authenticate, async (req, res) => {
+  const result = updateMicroServiceSchema.safeParse(req.body);
+  if (!result.success || (!result.data.status && !result.data.severity)) return res.status(400).json({ message: 'Invalid Microservice update' });
   try {
-    const current = await pool.query<Microservice>('SELECT id, title, description, severity, status, created_at, created_by FROM incidents WHERE id = $1', [req.params.id]);
+    const current = await pool.query<Microservice>('SELECT id, name, endpointUrl, severity, status, created_at, created_by FROM microservices WHERE id = $1', [req.params.id]);
     if (!current.rows[0]) return res.status(404).json({ message: 'Incident not found' });
     const incident = current.rows[0];
     const updated = await pool.query<Microservice>(
-      `UPDATE incidents SET severity = $1, status = $2 WHERE id = $3
+      `UPDATE microservices SET severity = $1, status = $2 WHERE id = $3
        RETURNING id, title, description, severity, status, created_at, created_by`,
       [result.data.severity ?? incident.severity, result.data.status ?? incident.status, req.params.id],
     );
@@ -77,9 +77,9 @@ app.patch('/api/incidents/:id', authenticate, async (req, res) => {
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to update incident' }); }
 });
 
-app.delete('/api/incidents/:id', authenticate, async (req, res) => {
+app.delete('/api/microservices/:id', authenticate, async (req, res) => {
   try {
-    const deleted = await pool.query('DELETE FROM incidents WHERE id = $1', [req.params.id]);
+    const deleted = await pool.query('DELETE FROM microservices WHERE id = $1', [req.params.id]);
     if (deleted.rowCount === 0) return res.status(404).json({ message: 'Incident not found' });
     return res.status(204).send();
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to delete incident' }); }
