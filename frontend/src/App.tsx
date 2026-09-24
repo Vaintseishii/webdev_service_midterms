@@ -154,14 +154,14 @@ function Dashboard() {
                                     OPERATIONS CENTER
                                 </p>
                                 <h1>
-                                    Incident overview
+                                    microservice overview
                                 </h1>
                                 <p className="muted">
                                     Track, prioritize, and resolve your team&apos;s technical issues.
                                 </p>
                             </div>
                             <button className="primary-button" onClick={() => setShowForm(!showForm)}>
-                                ＋ New incident
+                                ＋ New microservice
                             </button>
                         </div>
                         {state.error && <div className="error-banner">{state.error}
@@ -169,7 +169,7 @@ function Dashboard() {
                     <section className="stat-grid">
                         <div>
                             <span>
-                                Total incidents
+                                Total microservices
                             </span>
                             <strong>
                                     {counts.total}
@@ -203,8 +203,8 @@ function Dashboard() {
                             {showForm && <form className="new-incident" onSubmit={submitMicroservice}>
                                 <div className="section-heading">
                                     <div>
-                                        <p className="eyebrow">CREATE INCIDENT</p>
-                                        <h2>What needs attention?</h2>
+                                        <p className="eyebrow">CREATE MICROSERVICE</p>
+                                        <h2>Microservices?</h2>
                                         </div>
                                             <button type="button" className="close-button" onClick={() => setShowForm(false)}>
                                                 ×
@@ -235,7 +235,7 @@ function Dashboard() {
                                             </select>
                                         </label>
                                         <button className="primary-button">
-                                            Create incident
+                                            Create Microservice
                                         </button>
                                         </form>}
                                         <section className="incident-section">
@@ -245,17 +245,17 @@ function Dashboard() {
                                                         ALL ACTIVITY
                                                     </p>
                                                     <h2>
-                                                        Incidents
+                                                        Microservice
                                                     </h2>
                                                 </div>
                                                 <div className="filters">
                                                     <input 
-                                                        placeholder="Search incidents" 
-                                                        aria-label="Search incidents" />
+                                                        placeholder="Search Microservices" 
+                                                        aria-label="Search Microservices" />
                                                     <select 
                                                         value={filter} 
                                                         onChange={(event) => setFilter(event.target.value as 'All' | ServiceStatus)} 
-                                                         aria-label="Filter incidents">
+                                                         aria-label="Filter Microservices">
                                                         <option>
                                                             All
                                                         </option>
@@ -268,12 +268,12 @@ function Dashboard() {
                                             </div>
                                             <div className="incident-list">
                                                 {state.loading ? <p className="empty-state">
-                                                    Loading incidents...
+                                                    Loading microservices...
                                                     </p> : FilteredMicroservices.length ? FilteredMicroservices.map((microservice) => <MicroserviceRow key={microservice.id} 
                                                     microservice={microservice} 
                                                     onUpdate={updateMicroservice} 
                                                     onDelete={deleteMicroservice} />) : <p className="empty-state">
-                                                        No incidents match your filters.
+                                                        No microservices match your filters.
                                                         </p>}
                                             </div>
                                         </section>

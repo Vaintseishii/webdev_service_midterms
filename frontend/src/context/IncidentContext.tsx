@@ -40,7 +40,7 @@ export function MicroserviceProvider({ children }: { children: ReactNode }) {
   const loadMicroservices = async (token = state.token) => {
     if (!token) return
     dispatch({ type: 'FETCH_START' })
-    try { const data = await request('/Micrservices', {}, token); dispatch({ type: 'FETCH_SUCCESS', payload: data.microservices ?? [] }) }
+    try { const data = await request('/Microservices', {}, token); dispatch({ type: 'FETCH_SUCCESS', payload: data.microservices ?? [] }) }
     catch (error) { dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Unable to load microservices' }) }
   }
   const login = async (email: string, password: string) => {
