@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useIncidents } from './context/IncidentContext'
-import type { Incident, IncidentStatus, Severity } from './types'
+import { useMicroservices } from './context/IncidentContext'
+import type { Microservice, ServiceStatus, Environment, } from './types'
 import './App.css'
 
+/*
 const severities: Severity[] = ['Low', 'Medium', 'High', 'Critical']
 const statuses: IncidentStatus[] = ['Open', 'In Progress', 'Resolved']
+*/
 
+const environments: Environment[] = ['DEVELOPMENT' , 'STAGING' , 'PRODUCTION']
+const statuses: ServiceStatus[] = ['HEALTHY' , 'DEGRADED' , 'DOWN'
+]
 function Login() {
-  const { state, login } = useIncidents()
-  const [email, setEmail] = useState('admin@pulsedesk.com')
+  const { state, login } = useMicroservices()
+  const [email, setEmail] = useState('admin@servicehub.com')
   const [password, setPassword] = useState('password')
   const [submitting, setSubmitting] = useState(false)
   const submit = async (event: React.FormEvent) => { event.preventDefault(); setSubmitting(true); try { await login(email, password) } catch { /* error is rendered from context */ } finally { setSubmitting(false) } }
@@ -17,7 +22,7 @@ function Login() {
         <section className="login-card">
             <div className="brand-mark">P</div>
             <p className="eyebrow">IT OPERATIONS</p>
-            <h1>Welcome to PulseDesk</h1><p className="muted">
+            <h1>Welcome to servicehub</h1><p className="muted">
                 Keep every incident moving toward resolution.
             </p>
             <form onSubmit={submit}>
@@ -39,57 +44,57 @@ function Login() {
     </main>
 }
 
-function IncidentRow({ incident, onUpdate, onDelete }:
-                     { incident: Incident; onUpdate:
-                                 (id: string, changes: Pick<Incident, 'severity' | 'status'>) => void;
+function MicroserviceRow({ microservice, onUpdate, onDelete }:
+                     { microservice: Microservice; onUpdate:
+                                 (id: string, changes: Pick<Microservice, 'status' | 'environment'>) => void;
                          onDelete: (id: string) => void }) {
     return <article className="incident-row">
         <div className="incident-main">
-            <span className={`severity-dot ${incident.severity.toLowerCase()}`} />
+            <span className={`status-dot ${microservice.status.toLowerCase()}`} />
             <div>
                 <div className="incident-title">
-                    <strong>{incident.title}</strong>
+                    <strong>{microservice.name}</strong>
                     <span className="incident-id">
-                        {incident.id}
+                        {microservice.id}
                     </span>
                 </div>
                 <p>
-                    {incident.description}
+                    {microservice.endpointUrl}
                 </p>
                 <small>
-                    {new Date(incident.createdAt).toLocaleDateString()} · {incident.createdBy}
+                    {new Date(microservice.created_at).toLocaleDateString()} · {microservice.created_by}
                 </small>
             </div>
         </div>
         <div className="incident-controls">
             <select
-                aria-label={`${incident.id} status`}
-                value={incident.status}
+                aria-label={`${microservice.id} environment`}
+                value={microservice.environment}
                 onChange={(event) =>
-                    onUpdate(incident.id,
-                             { status: event.target.value as IncidentStatus,
-                               severity: incident.severity })}>
-                {statuses.map((status) =>
-                    <option key={status}>
-                        {status}
+                    onUpdate(microservice.id,
+                             { status: event.target.value as ServiceStatus,
+                               environment: microservice.environment })}>
+                {environments.map((environment) =>
+                    <option key={environment}>
+                        {environment}
                     </option>)}
             </select>
             <select
-                aria-label={`${incident.id} severity`}
-                value={incident.severity}
+                aria-label={`${microservice.id} status`}
+                value={microservice.status}
                 onChange={(event) =>
-                    onUpdate(incident.id,
-                             { status: incident.status,
-                               severity: event.target.value as Severity })}>
-                {severities.map((severity) =>
-                    <option key={severity}>
-                        {severity}
+                    onUpdate(microservice.id,
+                             { environment: microservice.environment,
+                               status: event.target.value as ServiceStatus})}>
+                {statuses.map((ServiceStatus) =>
+                    <option key={ServiceStatus}>
+                        {ServiceStatus}
                     </option>)}
             </select>
             <button
                 className="icon-button"
                 title="Delete incident"
-                onClick={() => onDelete(incident.id)}>
+                onClick={() => onDelete(microservice.id)}>
                 ×
             </button>
         </div>
@@ -97,31 +102,29 @@ function IncidentRow({ incident, onUpdate, onDelete }:
 }
 
 function Dashboard() {
-  const { state, createIncident, updateIncident, deleteIncident, logout } = useIncidents()
+  const { state, createMicroservice, updateMicroservice, deleteMicroservice, logout } = useMicroservices()
   const [showForm, setShowForm] = useState(false)
-  const [query, setQuery] = useState('')
+  const [name, setName] = useState('')
   const [filter, setFilter] = useState<'All' | IncidentStatus>('All')
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [severity, setSeverity] = useState<Severity>('Medium')
+  const [endpointUrl, setEndpointUrl] = useState('')
+  const [status, setStatus] = useState<ServiceStatus>('HEALTHY')
   useEffect(() => { if (!state.token) return }, [state.token])
 
   const filteredIncidents = 
-        useMemo(() => state.incidents.filter((incident) => 
-                                          (filter === 'All' || incident.status === filter) 
-                                          && `${incident.title} ${incident.description} ${incident.id}`.toLowerCase().includes(query.toLowerCase())), 
-                                          [filter, query, state.incidents])
+        useMemo(() => state.microservices.filter((microservice) => 
+                                          (filter === 'All' || microservice.status === filter) 
+                                          && '${incident.title} ${incident.description} ${incident.id}'.toLowerCase()), 
+                                          [filter])
+  const counts = { total: state.microservices.length, 
+                   open: state.microservices.filter((microservice) => microservice.environment === 'DEVELOPMENT').length, 
+                   progress: state.microservices.filter((microservice) => microservice.environment === 'STAGING').length, 
+                   resolved: state.microservices.filter((microservice) => microservice.environment === 'PRODUCTION').length }
 
-  const counts = { total: state.incidents.length, 
-                   open: state.incidents.filter((incident) => incident.status === 'Open').length, 
-                   progress: state.incidents.filter((incident) => incident.status === 'In Progress').length, 
-                   resolved: state.incidents.filter((incident) => incident.status === 'Resolved').length }
-
-  const submitIncident = async (event: React.FormEvent) => 
+  const submitMicroservice = async (event: React.FormEvent) => 
                         { event.preventDefault(); 
-                            await createIncident({ title, description, severity }); 
-                            setTitle(''); setDescription(''); 
-                            setSeverity('Medium'); 
+                            await createMicroservice({ name, endpointUrl, status }); 
+                            setName(''); setEndpointUrl(''); 
+                            setStatus('HEALTHY');
                             setShowForm(false) }
 
   return <main className="app-shell">
@@ -131,7 +134,7 @@ function Dashboard() {
                 P
             </span>
             <span>
-                PulseDesk
+                servicehub
             </span>
         </div>
         <div className="user-menu">
@@ -196,7 +199,7 @@ function Dashboard() {
                             </strong>
                          </div>
                     </section>
-                            {showForm && <form className="new-incident" onSubmit={submitIncident}>
+                            {showForm && <form className="new-incident" onSubmit={submitMicroservice}>
                                 <div className="section-heading">
                                     <div>
                                         <p className="eyebrow">CREATE INCIDENT</p>
@@ -209,25 +212,25 @@ function Dashboard() {
                                         <label>
                                             Title
                                             <input 
-                                                value={title} 
-                                                onChange={(event) => setTitle(event.target.value)} 
+                                                value={name} 
+                                                onChange={(event) => setName(event.target.value)} 
                                                 placeholder="Short summary" 
                                                 required minLength={3} />
                                         </label>
                                         <label>
                                             Description
                                             <textarea 
-                                                value={description} 
-                                                onChange={(event) => setDescription(event.target.value)} 
+                                                value={endpointUrl} 
+                                                onChange={(event) => setEndpointUrl(event.target.value)} 
                                                 placeholder="Add useful context for the team" 
                                                 required minLength={5} />
                                         </label>
                                         <label>
                                             Severity
                                             <select 
-                                                value={severity} 
-                                                onChange={(event) => setSeverity(event.target.value as Severity)}>
-                                                    {severities.map((item) => <option key={item}>{item}</option>)}
+                                                value={status} 
+                                                onChange={(event) => setStatus(event.target.value as ServiceStatus)}>
+                                                    {statuses.map((item) => <option key={item}>{item}</option>)}
                                             </select>
                                         </label>
                                         <button className="primary-button">
@@ -244,33 +247,14 @@ function Dashboard() {
                                                         Incidents
                                                     </h2>
                                                 </div>
-                                                <div className="filters">
-                                                    <input 
-                                                        value={query} 
-                                                        onChange={(event) => setQuery(event.target.value)} 
-                                                        placeholder="Search incidents" 
-                                                        aria-label="Search incidents" />
-                                                    <select 
-                                                        value={filter} 
-                                                        onChange={(event) => setFilter(event.target.value as 'All' | IncidentStatus)} 
-                                                        aria-label="Filter incidents">
-                                                        <option>
-                                                            All
-                                                        </option>
-                                                        {statuses.map((status) => 
-                                                        <option key={status}>
-                                                            {status}
-                                                        </option>)}
-                                                    </select>
-                                                </div>
                                             </div>
                                             <div className="incident-list">
                                                 {state.loading ? <p className="empty-state">
                                                     Loading incidents...
-                                                    </p> : filteredIncidents.length ? filteredIncidents.map((incident) => <IncidentRow key={incident.id} 
-                                                    incident={incident} 
-                                                    onUpdate={updateIncident} 
-                                                    onDelete={deleteIncident} />) : <p className="empty-state">
+                                                    </p> : Microservices.length ? Microservices.map((microservice) => <MicroserviceRow key={microservice.id} 
+                                                    microservice={microservice} 
+                                                    onUpdate={updateMicroservice} 
+                                                    onDelete={deleteMicroservice} />) : <p className="empty-state">
                                                         No incidents match your filters.
                                                         </p>}
                                             </div>
@@ -279,4 +263,4 @@ function Dashboard() {
                                 </main>
 }
 
-export default function App() { const { state } = useIncidents(); return state.user ? <Dashboard /> : <Login /> }
+export default function App() { const { state } = useMicroservices(); return state.user ? <Dashboard /> : <Login /> }
