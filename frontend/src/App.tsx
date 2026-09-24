@@ -4,6 +4,7 @@ import type { Microservice, ServiceStatus, Environment, } from './types'
 import './App.css'
 
 /*
+AAAAAAAAAAAAAAAAAAAAAAAAA
 const severities: Severity[] = ['Low', 'Medium', 'High', 'Critical']
 const statuses: IncidentStatus[] = ['Open', 'In Progress', 'Resolved']
 */
@@ -105,12 +106,12 @@ function Dashboard() {
   const { state, createMicroservice, updateMicroservice, deleteMicroservice, logout } = useMicroservices()
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
-  const [filter, setFilter] = useState<'All' | IncidentStatus>('All')
+  const [filter, setFilter] = useState<'All' | ServiceStatus>('All')
   const [endpointUrl, setEndpointUrl] = useState('')
   const [status, setStatus] = useState<ServiceStatus>('HEALTHY')
   useEffect(() => { if (!state.token) return }, [state.token])
 
-  const filteredIncidents = 
+  const FilteredMicroservices = 
         useMemo(() => state.microservices.filter((microservice) => 
                                           (filter === 'All' || microservice.status === filter) 
                                           && '${incident.title} ${incident.description} ${incident.id}'.toLowerCase()), 
@@ -247,11 +248,28 @@ function Dashboard() {
                                                         Incidents
                                                     </h2>
                                                 </div>
+                                                <div className="filters">
+                                                    <input 
+                                                        placeholder="Search incidents" 
+                                                        aria-label="Search incidents" />
+                                                    <select 
+                                                        value={filter} 
+                                                        onChange={(event) => setFilter(event.target.value as 'All' | ServiceStatus)} 
+                                                         aria-label="Filter incidents">
+                                                        <option>
+                                                            All
+                                                        </option>
+                                                        {statuses.map((status) => 
+                                                        <option key={status}>
+                                                            {status}
+                                                        </option>)}
+                                                    </select>
+                                                </div>
                                             </div>
                                             <div className="incident-list">
                                                 {state.loading ? <p className="empty-state">
                                                     Loading incidents...
-                                                    </p> : Microservices.length ? Microservices.map((microservice) => <MicroserviceRow key={microservice.id} 
+                                                    </p> : FilteredMicroservices.length ? FilteredMicroservices.map((microservice) => <MicroserviceRow key={microservice.id} 
                                                     microservice={microservice} 
                                                     onUpdate={updateMicroservice} 
                                                     onDelete={deleteMicroservice} />) : <p className="empty-state">
