@@ -11,7 +11,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'service-local-secret';
 const loginSchema = z.object({ email: z.email(), password: z.string().min(6) });
 const createMicroServiceSchema = z.object({ name: z.string().min(3), endpointUrl: z.string().min(5), status: z.enum(['HEALTH', 'DEGRADED', 'DOWN']) });
-const updateMicroServiceSchema = z.object({ severity: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(), environment: z.enum(['DEVELOPENT', 'STAGING', 'PRODUCTION']).optional() });
+const updateMicroServiceSchema = z.object({ status: z.enum(['HEALTH', 'DEGRADED', 'DOWN']).optional(), environment: z.enum(['DEVELOPENT', 'STAGING', 'PRODUCTION']).optional() });
 
 // severity is status
 // status is environment
@@ -57,31 +57,31 @@ app.post('/api/microservices', authenticate, async (req, res) => {
        RETURNING id, name, endpointUrl, environment, status, created_at, created_by`,
       [id, result.data.name, result.data.endpointUrl, result.data.status, req.userEmail],
     );
-    return res.status(201).json({ incident: toMicroService(inserted.rows[0]) });
+    return res.status(201).json({ MicroService: toMicroService(inserted.rows[0]) });
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to create MicroService' }); }
 });
 
 app.patch('/api/microservices/:id', authenticate, async (req, res) => {
   const result = updateMicroServiceSchema.safeParse(req.body);
-  if (!result.success || (!result.data.status && !result.data.severity)) return res.status(400).json({ message: 'Invalid Microservice update' });
+  if (!result.success || (!result.data.environment && !result.data.status)) return res.status(400).json({ message: 'Invalid Microservice update' });
   try {
 
     const current = await pool.query<Microservice>('SELECT id, name, endpointUrl, status, environment, created_at, created_by FROM microservices WHERE id = $1', [req.params.id]);
     if (!current.rows[0]) return res.status(404).json({ message: 'Microservice not found' });
-    const incident = current.rows[0];
+    const MicroService = current.rows[0];
     const updated = await pool.query<Microservice>(
       `UPDATE microservices SET severity = $1, status = $2 WHERE id = $3
        RETURNING id, title, description, severity, status, created_at, created_by`,
-      [result.data.severity ?? incident.severity, result.data.status ?? incident.status, req.params.id],
+      [result.data.status ?? MicroService.status, result.data.environment ?? MicroService.status, req.params.id],
     );
-    return res.json({ incident: toMicroService(updated.rows[0]) });
+    return res.json({ MicroService: toMicroService(updated.rows[0]) });
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to update MicroService' }); }
 });
 
 app.delete('/api/microservices/:id', authenticate, async (req, res) => {
   try {
     const deleted = await pool.query('DELETE FROM microservices WHERE id = $1', [req.params.id]);
-    if (deleted.rowCount === 0) return res.status(404).json({ message: 'Incident not found' });
+    if (deleted.rowCount === 0) return res.status(404).json({ message: 'MicroService not found' });
     return res.status(204).send();
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to delete Microservice' }); }
 });
