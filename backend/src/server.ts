@@ -4,14 +4,17 @@ import express, { type Request, type Response, type NextFunction } from 'express
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { initializeDatabase, pool, toIncident, type IncidentRow } from './db.js';
+import { initializeDatabase, pool, toMicroService, type Microservice } from './db.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'pulsedesk-local-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'service-local-secret';
 const loginSchema = z.object({ email: z.email(), password: z.string().min(6) });
-const createIncidentSchema = z.object({ title: z.string().min(3), description: z.string().min(5), severity: z.enum(['Low', 'Medium', 'High', 'Critical']) });
-const updateIncidentSchema = z.object({ severity: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(), status: z.enum(['Open', 'In Progress', 'Resolved']).optional() });
+const createMicroServiceSchema = z.object({ name: z.string().min(3), endpointUrl: z.string().min(5), status: z.enum(['HEALTH', 'DEGRADED', 'DOWN']) });
+const updateMicroServiceSchema = z.object({ severity: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(), environment: z.enum(['DEVELOPENT', 'STAGING', 'PRODUCTION']).optional() });
+
+// severity is status
+// status is environment
 
 declare global { namespace Express { interface Request { userEmail?: string } } }
 app.use(cors());
@@ -38,8 +41,8 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/incidents', authenticate, async (_req, res) => {
   try {
-    const result = await pool.query<IncidentRow>('SELECT id, title, description, severity, status, created_at, created_by FROM incidents ORDER BY created_at DESC');
-    return res.json({ incidents: result.rows.map(toIncident) });
+    const result = await pool.query<Microservice>('SELECT id, title, description, severity, status, created_at, created_by FROM incidents ORDER BY created_at DESC');
+    return res.json({ incidents: result.rows.map(toMicroService) });
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to load incidents' }); }
 });
 
@@ -48,13 +51,13 @@ app.post('/api/incidents', authenticate, async (req, res) => {
   if (!result.success) return res.status(400).json({ message: 'Title, description, and severity are required' });
   try {
     const id = `INC-${Date.now()}`;
-    const inserted = await pool.query<IncidentRow>(
+    const inserted = await pool.query<Microservice>(
       `INSERT INTO incidents (id, title, description, severity, status, created_by)
        VALUES ($1, $2, $3, $4, 'Open', $5)
        RETURNING id, title, description, severity, status, created_at, created_by`,
       [id, result.data.title, result.data.description, result.data.severity, req.userEmail],
     );
-    return res.status(201).json({ incident: toIncident(inserted.rows[0]) });
+    return res.status(201).json({ incident: toMicroService(inserted.rows[0]) });
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to create incident' }); }
 });
 
@@ -62,15 +65,15 @@ app.patch('/api/incidents/:id', authenticate, async (req, res) => {
   const result = updateIncidentSchema.safeParse(req.body);
   if (!result.success || (!result.data.status && !result.data.severity)) return res.status(400).json({ message: 'Invalid incident update' });
   try {
-    const current = await pool.query<IncidentRow>('SELECT id, title, description, severity, status, created_at, created_by FROM incidents WHERE id = $1', [req.params.id]);
+    const current = await pool.query<Microservice>('SELECT id, title, description, severity, status, created_at, created_by FROM incidents WHERE id = $1', [req.params.id]);
     if (!current.rows[0]) return res.status(404).json({ message: 'Incident not found' });
     const incident = current.rows[0];
-    const updated = await pool.query<IncidentRow>(
+    const updated = await pool.query<Microservice>(
       `UPDATE incidents SET severity = $1, status = $2 WHERE id = $3
        RETURNING id, title, description, severity, status, created_at, created_by`,
       [result.data.severity ?? incident.severity, result.data.status ?? incident.status, req.params.id],
     );
-    return res.json({ incident: toIncident(updated.rows[0]) });
+    return res.json({ incident: toMicroService(updated.rows[0]) });
   } catch (error) { console.error(error); return res.status(500).json({ message: 'Unable to update incident' }); }
 });
 
